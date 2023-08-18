@@ -95,7 +95,6 @@ class authController {
         } catch (error) {
             console.error('Ошибка проверки токена:', error);
 
-            // Обработайте разные типы ошибок, например, истек срок действия токена или токен недействителен.
             if (error instanceof jwt.TokenExpiredError) {
                 return res.status(401).json({ message: 'Токен истек' });
             }
