@@ -11,6 +11,7 @@ router.post('/registration', [
 router.post('/login', controller.login)
 router.get('/users',middaleware, controller.getUsers)
 router.post('/notice', controller.notice)
-
-
+router.get('/creatnotice',authMiddleware, controller.creatnotice)
+router.post('/delete', controller.deletnotice)
+router.post('/change', controller.changenodes)
 module.exports = router
