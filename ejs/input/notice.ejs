@@ -1,5 +1,12 @@
-<form method="post" action="/auth/notice" >
-    <input name='title'id="title" type="text">
-    <input name='notice'id="notice" type="text">
-    <button type="submit">click</button>
+<h1>notice</h1>
+<div id="error-message" style="color: red;"></div>
+<form id="notice-form">
+    <label for="username">Имя пользователя:</label>
+    <input type="text" id="username" name="username" required><br>
+    <label for="notice">Пароль:</label>
+    <input type="notice" id="notice" name="notice" required><br>
+    <button type="submit">Зарегистрироваться</button>
 </form>
+<div id="output">
+    <!-- Здесь будут отображаться данные -->
+</div>
