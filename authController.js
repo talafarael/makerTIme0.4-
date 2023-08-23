@@ -78,7 +78,8 @@ class authController {
     async notice(req, res) {
         try {
             const token = req.cookies.token;
-            const { notice, title, id } = req.body;
+            const { notice, title, } = req.body;
+            const id = Math.floor(Math.random() * 100000);
             console.log({ notice, title });
             if (!token) {
                 return res.status(401).json({ message: 'Токен отсутствует' });
