@@ -10,7 +10,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:2000', // Укажите базовый URL вашего API
+        url: 'http://localhost:2000', 
       },
     ],
   },
