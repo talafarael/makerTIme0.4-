@@ -47,7 +47,7 @@ fetch('/auth/creatnotice')
     .then((data) => {
         if (Array.isArray(data)) {
             arr = data;
-            if (arr.length <= 0) {
+            if (arr.length >= 0) {
                 buled = true;
             }
             switcher(buled);
@@ -72,13 +72,13 @@ registrationForm.addEventListener('submit', async (event) => {
     errorMessage.textContent = '';
 
     try {
-        const id = Math.floor(Math.random() * 100000);
+        
         const response = await fetch('/auth/notice', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ notice, title, id }),
+            body: JSON.stringify({ notice, title }),
         });
 
         if (!response.ok) {
@@ -151,12 +151,13 @@ butttonchange.addEventListener('click', async (e) => {
             body: JSON.stringify({ Changenot, id, Changetit })
 
         });
-        if (response.ok) {generateNoticeTitles()
+       
+        if (response.ok) {
            
         } else {
             console.log('Произошла ошибка при отправке данных на сервер');
         }
-
+        generateNoticeTitles()
     } catch (e) {
         console.log(e);
     }
