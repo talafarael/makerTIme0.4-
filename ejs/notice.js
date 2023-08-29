@@ -81,6 +81,7 @@ registrationForm.addEventListener('submit', async (event) => {
             body: JSON.stringify({ notice, title }),
         });
 
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message);
