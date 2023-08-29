@@ -7,7 +7,7 @@ const swaggerSpecs = require('./swaggerDOC');
 const swaggerUi = require('swagger-ui-express');
 const app = express();
 
-const PORT = process.env.PORT || 2000;
+const PORT = process.env.PORT || 8000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.resolve(__dirname, 'ejs'));
@@ -23,13 +23,17 @@ const start = async () => {
     try {
         await mongoose.connect(
             'mongodb+srv://shine:shine1234@cluster0.o8mqsuq.mongodb.net/'
-        );
+        ); 
+        app.get('/email', async (req, res) => {
+            res.render('email');
+        });
         app.get('/index', (req, res) => {
             res.render('index');
         });
         app.get('/', async (req, res) => {
             res.render('notice.ejs');
         });
+       
         app.listen(PORT, () => {
             console.log(PORT);
         });
