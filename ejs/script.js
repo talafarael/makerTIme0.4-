@@ -27,15 +27,15 @@ registrationForm.addEventListener("submit", async (event) => {
         });
 
         if (!response.ok) {
-       
+            
             const errorData = await response.json();
             throw new Error(errorData.message);
         }
-
-        const data = await response.json();
-
- 
-        outputDiv.textContent = JSON.stringify(data, null, 2);
+        
+        const data = await response.json();   
+  window.location.href = data.redirect;
+        
+        
     } catch (error) {
         
         errorMessage.textContent = "Ошибка: " + error.message;
@@ -84,8 +84,6 @@ registrationForm2.addEventListener("submit", async (event) => {
         if (response.ok) {
         
           window.location.href = data.redirect;
-        } else {
-         
         }
   
         outputDiv2.textContent = JSON.stringify(data, null, 2);
