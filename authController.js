@@ -4,7 +4,9 @@ const User = require('./model/users');
 const bcrypt = require('bcryptjs');
 const { userid } = require('./userid');
 const { secret } = require('./config');
-
+const tempData = require('./cache');
+const Emailsend = require('./email');
+const emailSender = new Emailsend();
 const generateAccessToken = (id, roles) => {
     const playold = {
         id,
@@ -22,24 +24,102 @@ class authController {
                     .status(400)
                     .json({ message: 'Ошибка при регистрации', errors });
             }
+
             const { username, password } = req.body;
+
             const candidate = await User.findOne({ username });
             if (candidate) {
-                return res.status(400).json({
-                    message: 'Пользователь с таким именем уже существует',
-                });
+                return res
+                    .status(400)
+                    .json({
+                        message: 'Пользователь с таким именем уже существует',
+                    });
             }
-            const hashPassword = bcrypt.hashSync(password, 7);
-            const user = new User({ username, password: hashPassword });
-            await user.save();
-            return res.json({
-                message: 'Пользователь успешно зарегистрирован',
+
+            const hashPassword = await bcrypt.hash(password, 7);
+            const chaecknum = Math.floor(Math.random() * 1000);
+            const status=true
+            tempData.setTempData(
+                'registrationData',
+                { username, chaecknum, hashPassword ,status},
+                30 * 60 * 1000
+            );
+
+            return res.status(200).json({
+                redirect: '/email',
             });
         } catch (e) {
-            console.log(e);
+            console.error(e);
             res.status(400).json({ message: 'Registration error' });
         }
     }
+    
+
+   async sendemail(req, res) {
+    try {
+        const savedData = tempData.getTempData('registrationData');
+
+        if (!savedData) {
+            return res.status(400).json({ message: 'Registration data not found' });
+        }
+
+        const username = savedData.username;
+        const chaecknum = savedData.chaecknum;
+        let  status = savedData.status;
+        if(status){
+        await emailSender.sendmessage({
+            emailUser: username,
+            num: chaecknum.toString(),
+        });
+        
+        status = false; 
+        tempData.setTempData(
+            'registrationData',
+            { username, chaecknum, hashPassword: savedData.hashPassword, status },
+            30 * 60 * 1000
+        );
+    
+        return res.status(200).json({ message: 'Email sent successfully' }); 
+        }
+       
+        
+       
+        
+        
+    
+    } catch (e) {
+        console.error('Ошибка при отправке email:', e);
+        return res.status(400).json({ message: 'Email sending error' });
+    }
+}
+  
+async registerchaeck(req, res) {
+    try {
+        const savedData = tempData.getTempData('registrationData');
+        const { password } = req.body;
+        
+        if (!savedData) {
+            return res.status(400).json({ message: 'Registration data not found' });
+        }
+
+        const { username, chaecknum, hashPassword } = savedData;
+        if (chaecknum == password) {
+        const user = new User({ username, password: hashPassword });
+        await user.save();
+         return res.status(200).json({
+            redirect: '/index',
+        });
+        
+
+       
+        }
+       return res.status(400).json({ message: 'Invalid code' });
+        
+    } catch (error) {
+        console.error('Error during registration:', error);
+        return res.status(500).json({ message: 'Registration error' });
+    }
+}
     async login(req, res) {
         try {
             const { username, password } = req.body;
@@ -78,7 +158,7 @@ class authController {
     async notice(req, res) {
         try {
             const token = req.cookies.token;
-            const { notice, title, } = req.body;
+            const { notice, title } = req.body;
             const id = Math.floor(Math.random() * 100000);
             console.log({ notice, title });
             if (!token) {
@@ -105,32 +185,30 @@ class authController {
     }
     async users(req, res) {
         try {
-            
         } catch (e) {
             console.log(e);
             res.status(400).json({ message: 'Registration error' });
         }
     }
     async creatnotice(req, res) {
-        
-            try {
-                const token = req.cookies.token;
-        
-                if (!token) {
-                    return res.status(401).json({ message: 'Токен отсутствует' });
-                }
-        
-                const decodedData = await jwt.verify(token, secret);
-                const userId = decodedData.id;
-                const user = await User.findById(userId);
-                const notice = user.nodes;
-        
-                return res.json(notice);
-            } catch (e) {
-                console.log(e);
-                
+        try {
+            const token = req.cookies.token;
+
+            if (!token) {
                 return res.status(401).json({ message: 'Токен отсутствует' });
             }
+
+            const decodedData = await jwt.verify(token, secret);
+            const userId = decodedData.id;
+            const user = await User.findById(userId);
+            const notice = user.nodes;
+
+            return res.json(notice);
+        } catch (e) {
+            console.log(e);
+
+            return res.status(401).json({ message: 'Токен отсутствует' });
+        }
     }
     async deletnotice(req, res) {
         try {
@@ -162,9 +240,9 @@ class authController {
     // async changenodes(req, res) {
     //     try {
     //         const token = req.cookies.token;
-    //         const { Changenot, id, Changetit } = req.body; 
+    //         const { Changenot, id, Changetit } = req.body;
     //         console.log({ Changenot, id, Changetit });
-            
+
     //         res.status(200).json({ message: 'Данные успешно обновлены' });
     //     } catch (e) {
     //         console.log(e);
@@ -174,7 +252,7 @@ class authController {
     async changenodes(req, res) {
         try {
             const token = req.cookies.token;
-            const { Changenot, id, Changetit } = req.body; 
+            const { Changenot, id, Changetit } = req.body;
             if (!token) {
                 return res.status(401).json({ message: 'Токен отсутствует' });
             }
@@ -185,22 +263,20 @@ class authController {
                 console.log('Пользователь не найден');
                 return;
             }
-            const users = user.nodes
-           const arr = users.map((node) => {
+            const users = user.nodes;
+            const arr = users.map((node) => {
                 if (node.id == parseInt(id)) {
                     node.notice = Changenot;
                     node.title = Changetit;
-                   
                 }
                 return node;
             });
 
-          user.nodes=arr
-          user.markModified('nodes');
-          console.log(user.nodes)
-           await user.save();
-            
-   
+            user.nodes = arr;
+            user.markModified('nodes');
+            console.log(user.nodes);
+            await user.save();
+
             res.status(200).json({ message: 'Данные успешно обновлены' });
         } catch (e) {
             console.log(e);
