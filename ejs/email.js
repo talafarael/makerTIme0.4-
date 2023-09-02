@@ -1,5 +1,6 @@
 const password=document.querySelector('#pass-form')
 const errorMessage = document.getElementById('error-message2');
+const resend=document.querySelector('#resend-pass')
 fetch("/auth/emailsend", {
     method: 'POST',
 })
@@ -16,7 +17,35 @@ fetch("/auth/emailsend", {
 .catch((error) => {
     console.error('Ошибка при получении данных:', error);
 });
-
+resend.addEventListener('submit',async(event )=>{
+    event.preventDefault();
+    try {
+        
+        await fetch('/auth/resendemail', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+           
+        }); 
+       
+          
+    if (!response.ok) {
+            
+        const errorData = await response.json();
+        console.log(errorData)
+    }
+     
+        
+        
+       
+        
+      
+    } catch (error) {
+      
+       
+    }
+})
 password.addEventListener('submit',async(event )=>{
     event.preventDefault();
     const pass=event.target.elements.password2.value;
