@@ -37,7 +37,7 @@ class authController {
             }
 
             const hashPassword = await bcrypt.hash(password, 7);
-            const chaecknum = Math.floor(Math.random() * 1000);
+            const chaecknum = Math.floor(Math.random() * 10000);
             const status=true
             tempData.setTempData(
                 'registrationData',
@@ -54,7 +54,28 @@ class authController {
         }
     }
     
-
+    async resendemail(req, res) {
+        try {
+            const savedData = tempData.getTempData('registrationData');
+            const username = savedData.username;
+       
+            const chaecknum = Math.floor(Math.random() * 10000);
+            let status = false; 
+            await emailSender.sendmessage({
+                emailUser: username,
+                num: chaecknum.toString(),
+            });
+           
+ tempData.setTempData(
+            'registrationData',
+            { username, chaecknum, hashPassword: savedData.hashPassword, status },
+            30 * 60 * 1000
+        );
+        } catch (e) {
+            console.log(e);
+            res.status(400).json({ message: 'Registration error' });
+        }
+    }
    async sendemail(req, res) {
     try {
         const savedData = tempData.getTempData('registrationData');
@@ -92,7 +113,7 @@ class authController {
         return res.status(400).json({ message: 'Email sending error' });
     }
 }
-  
+
 async registerchaeck(req, res) {
     try {
         const savedData = tempData.getTempData('registrationData');
