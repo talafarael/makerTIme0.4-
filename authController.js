@@ -114,26 +114,26 @@ class authController {
         return res.status(400).json({ message: 'Email sending error' });
     }
 }
-// async sendemailforgot(req, res) {
-//     try {
-//         const {email}=req.body
-//         const ffff='faafa'
-//         forgotdata.setTempData(
-//             'email',
-//             { email },
-//             30 * 60 * 1000
-//         );
-//         const em=forgotdata.getTempData('email');
-//         await emailSender.sendmessage({
-//             emailUser: em,
-//             num: ffff.toString(),
-//         });
-        
-//     } catch (e) {
-//         console.log(e);
-//         res.status(400).json({ message: 'Registration error' });
-//     }
-// }
+async sendemailforgot(req, res) {
+    try {
+        const {email}=req.body
+        const ffff='faafa'
+        forgotdata.setTempData(
+            'email',
+            { email },
+            30 * 60 * 1000
+        );
+        // const em=forgotdata.getTempData('email');
+        await emailSender.sendmessage({
+            emailUser: email,
+            num: ffff.toString(),
+        });
+        res.status(200).json({ message: 'Данные успешно обновлены' });
+    } catch (e) {
+        console.log(e);
+        res.status(400).json({ message: 'Registration error' });
+    }
+}
 async registerchaeck(req, res) {
     try {
         const savedData = tempData.getTempData('registrationData');
