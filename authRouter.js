@@ -20,4 +20,5 @@ router.post('/notice', controller.notice)
 router.get('/creatnotice',authMiddleware, controller.creatnotice)
 router.post('/delete', controller.deletnotice)
 router.post('/change', controller.changenodes)
+router.post('/sendemailforgot',controller.sendemailforgot)
 module.exports = router
