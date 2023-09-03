@@ -33,6 +33,9 @@ const start = async () => {
         app.get('/', async (req, res) => {
             res.render('notice.ejs');
         });
+        app.get('/forogtpassword', async (req, res) => {
+            res.render('sendemailforgot');
+        });
        
         app.listen(PORT, () => {
             console.log(PORT);
