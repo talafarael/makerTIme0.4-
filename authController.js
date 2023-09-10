@@ -5,10 +5,15 @@ const bcrypt = require('bcryptjs');
 const { userid } = require('./userid');
 const { secret } = require('./config');
 const tempData = require('./cache');
-const forgotdata=require('./emailforgotcache')
+const forgotdata = require('./emailforgotcache');
 const Emailsend = require('./email');
+const forgotEmail = require('./forogotpassemail');
+const { json } = require('express');
 const emailSender = new Emailsend();
-const generateAccessToken = (id, roles) => {
+
+const forgotEmailsend = new forgotEmail();
+const generateAccessToken = (id) => {
+
     const playold = {
         id,
     };
@@ -30,19 +35,17 @@ class authController {
 
             const candidate = await User.findOne({ username });
             if (candidate) {
-                return res
-                    .status(400)
-                    .json({
-                        message: 'Пользователь с таким именем уже существует',
-                    });
+                return res.status(400).json({
+                    message: 'Пользователь с таким именем уже существует',
+                });
             }
 
             const hashPassword = await bcrypt.hash(password, 7);
             const chaecknum = Math.floor(Math.random() * 10000);
-            const status=true
+            const status = true;
             tempData.setTempData(
                 'registrationData',
-                { username, chaecknum, hashPassword ,status},
+                { username, chaecknum, hashPassword, status },
                 30 * 60 * 1000
             );
 
@@ -54,113 +57,130 @@ class authController {
             res.status(400).json({ message: 'Registration error' });
         }
     }
-    
+
     async resendemail(req, res) {
         try {
             const savedData = tempData.getTempData('registrationData');
             const username = savedData.username;
-       
+
             const chaecknum = Math.floor(Math.random() * 10000);
-            let status = false; 
+            let status = false;
             await emailSender.sendmessage({
                 emailUser: username,
                 num: chaecknum.toString(),
             });
-           
- tempData.setTempData(
-            'registrationData',
-            { username, chaecknum, hashPassword: savedData.hashPassword, status },
-            30 * 60 * 1000
-        );
+
+            tempData.setTempData(
+                'registrationData',
+                {
+                    username,
+                    chaecknum,
+                    hashPassword: savedData.hashPassword,
+                    status,
+                },
+                30 * 60 * 1000
+            );
         } catch (e) {
             console.log(e);
             res.status(400).json({ message: 'Registration error' });
         }
     }
-   async sendemail(req, res) {
-    try {
-        const savedData = tempData.getTempData('registrationData');
+    async sendemail(req, res) {
+        try {
+            const savedData = tempData.getTempData('registrationData');
 
-        if (!savedData) {
-            return res.status(400).json({ message: 'Registration data not found' });
-        }
+            if (!savedData) {
+                return res
+                    .status(400)
+                    .json({ message: 'Registration data not found' });
+            }
 
-        const username = savedData.username;
-        const chaecknum = savedData.chaecknum;
-        let  status = savedData.status;
-        if(status){
-        await emailSender.sendmessage({
-            emailUser: username,
-            num: chaecknum.toString(),
-        });
-        
-        status = false; 
-        tempData.setTempData(
-            'registrationData',
-            { username, chaecknum, hashPassword: savedData.hashPassword, status },
-            30 * 60 * 1000
-        );
-    
-        return res.status(200).json({ message: 'Email sent successfully' }); 
+            const username = savedData.username;
+            const chaecknum = savedData.chaecknum;
+            let status = savedData.status;
+            if (status) {
+                await emailSender.sendmessage({
+                    emailUser: username,
+                    num: chaecknum.toString(),
+                });
+
+                status = false;
+                tempData.setTempData(
+                    'registrationData',
+                    {
+                        username,
+                        chaecknum,
+                        hashPassword: savedData.hashPassword,
+                        status,
+                    },
+                    30 * 60 * 1000
+                );
+
+                return res
+                    .status(200)
+                    .json({ message: 'Email sent successfully' });
+            }
+        } catch (e) {
+            console.error('Ошибка при отправке email:', e);
+            return res.status(400).json({ message: 'Email sending error' });
         }
-       
-        
-       
-        
-        
-    
-    } catch (e) {
-        console.error('Ошибка при отправке email:', e);
-        return res.status(400).json({ message: 'Email sending error' });
     }
-}
-async sendemailforgot(req, res) {
-    try {
-        const {email}=req.body
-        const ffff='faafa'
-        forgotdata.setTempData(
-            'email',
-            { email },
-            30 * 60 * 1000
-        );
-        // const em=forgotdata.getTempData('email');
-        await emailSender.sendmessage({
-            emailUser: email,
-            num: ffff.toString(),
-        });
-        res.status(200).json({ message: 'Данные успешно обновлены' });
-    } catch (e) {
-        console.log(e);
-        res.status(400).json({ message: 'Registration error' });
-    }
-}
-async registerchaeck(req, res) {
-    try {
-        const savedData = tempData.getTempData('registrationData');
-        const { password } = req.body;
-        
-        if (!savedData) {
-            return res.status(400).json({ message: 'Registration data not found' });
-        }
+    async sendemailforgot(req, res) {
+        try {
+            const { email } = req.body;
+            const username = email;
+            const candidate = await User.findOne({ username });
+            if (!candidate) {
+                return res
+                    .status(400)
+                    .json({ message: 'Ошибка при регистрации', errors });
+            }
+            const expiresIn = 1800; // Час в секундах (1800 секунд = 30 хвилин)
 
-        const { username, chaecknum, hashPassword } = savedData;
-        if (chaecknum == password) {
-        const user = new User({ username, password: hashPassword });
-        await user.save();
-         return res.status(200).json({
-            redirect: '/index',
-        });
-        
+const hashusername = jwt.sign({ username }, process.env.SECRET, { expiresIn });
+         
 
-       
+            console.log(hashusername);
+
+            const ffff = `${process.env.HOST}/acountforgot?token=${hashusername}`;
+            forgotdata.setTempData('email', { email }, 30 * 60 * 1000);
+            const em = forgotdata.getTempData('email');
+            await forgotEmailsend.sendmessage({
+                emailUser: em.email,
+                num: ffff.toString(),
+            });
+            console.log(em);
+            res.status(200).json({ message: 'em' });
+        } catch (e) {
+            console.log(e);
+            res.status(400).json({ message: 'Registration error' });
         }
-       return res.status(400).json({ message: 'Invalid code' });
-        
-    } catch (error) {
-        console.error('Error during registration:', error);
-        return res.status(500).json({ message: 'Registration error' });
     }
-}
+    async registerchaeck(req, res) {
+        try {
+            const savedData = tempData.getTempData('registrationData');
+            const { password } = req.body;
+
+            if (!savedData) {
+                return res
+                    .status(400)
+                    .json({ message: 'Registration data not found' });
+            }
+
+            const { username, chaecknum, hashPassword } = savedData;
+            if (chaecknum == password) {
+                const user = new User({ username, password: hashPassword });
+                await user.save();
+                return res.status(200).json({
+                    redirect: '/index',
+                });
+            }
+            return res.status(400).json({ message: 'Invalid code' });
+        } catch (error) {
+            console.error('Error during registration:', error);
+            return res.status(500).json({ message: 'Registration error' });
+        }
+    }
     async login(req, res) {
         try {
             const { username, password } = req.body;
@@ -176,7 +196,7 @@ async registerchaeck(req, res) {
                     .status(400)
                     .json({ message: `Введен неверный пароль` });
             }
-            const token = generateAccessToken(user._id, user.roles);
+            const token = generateAccessToken(user._id);
             res.cookie('token', token, {
                 httpOnly: true,
                 maxAge: 86400 * 1000,
@@ -229,6 +249,35 @@ async registerchaeck(req, res) {
         } catch (e) {
             console.log(e);
             res.status(400).json({ message: 'Registration error' });
+        }
+    }
+    async resetpassword(req, res) {
+        try {
+            const { password } = req.body;
+            const emailData = forgotdata.getTempData('email');
+
+            if (!emailData) {
+                return res
+                    .status(401)
+                    .json({ message: 'Користувач не авторизований' });
+            }
+
+            const email = emailData.email;
+            
+            const authHeader = req.query
+            // const validPassword =authHeader.substring(7,authHeader.lenght)
+            console.log(authHeader);
+            // const authtoken= json.toString(authHeader)
+            
+
+            // const decodedData = jwt.verify(authtoken, secret);
+            // console.log(decodedData);
+            return res
+                .status(200)
+                .json({ message: 'Скидання пароля успішно виконано' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Внутрішня помилка сервера' });
         }
     }
     async creatnotice(req, res) {
