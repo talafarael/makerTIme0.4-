@@ -13,7 +13,6 @@ const emailSender = new Emailsend();
 
 const forgotEmailsend = new forgotEmail();
 const generateAccessToken = (id) => {
-
     const playold = {
         id,
     };
@@ -135,13 +134,14 @@ class authController {
                     .status(400)
                     .json({ message: 'Ошибка при регистрации', errors });
             }
-            const expiresIn = 1800; // Час в секундах (1800 секунд = 30 хвилин)
+            const expiresIn = 1800; 
 
-const hashusername = jwt.sign({ username }, process.env.SECRET, { expiresIn });
-         
+            const hashusername = jwt.sign({ username }, secret, {
+                expiresIn,
+            });
 
-            console.log(hashusername);
-
+            console.log('send '+hashusername);
+ 
             const ffff = `${process.env.HOST}/acountforgot?token=${hashusername}`;
             forgotdata.setTempData('email', { email }, 30 * 60 * 1000);
             const em = forgotdata.getTempData('email');
@@ -253,9 +253,9 @@ const hashusername = jwt.sign({ username }, process.env.SECRET, { expiresIn });
     }
     async resetpassword(req, res) {
         try {
-            const { password } = req.body;
+            const { password, tokenurl } = req.body;
             const emailData = forgotdata.getTempData('email');
-
+            const hashPassword = await bcrypt.hash(password, 7);
             if (!emailData) {
                 return res
                     .status(401)
@@ -263,21 +263,26 @@ const hashusername = jwt.sign({ username }, process.env.SECRET, { expiresIn });
             }
 
             const email = emailData.email;
-            
-            const authHeader = req.query
-            // const validPassword =authHeader.substring(7,authHeader.lenght)
-            console.log(authHeader);
-            // const authtoken= json.toString(authHeader)
-            
+            const cleanTokenurl = tokenurl.replace(/\s/g, '');
+             
+            const decodedData =await jwt.verify(cleanTokenurl,secret);
+            const username= decodedData.username;
+            if (email!==username) {
+              console.log('afgaf')
+              return  res.status(500) .json({ message: 'Внутрішня помилка сервера' });
+            }
+            const user = await User.findOne({ username });
+            // if (!cuser) {
+            //    return  res.status(400).json({ message: 'Ошибка при регистрации'});
+            // }
 
-            // const decodedData = jwt.verify(authtoken, secret);
-            // console.log(decodedData);
-            return res
-                .status(200)
-                .json({ message: 'Скидання пароля успішно виконано' });
+            user.password=hashPassword
+            await user.save();
+         
+        return  res.status(200).json({ message: 'Скидання пароля успішно виконано' });Ъ
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: 'Внутрішня помилка сервера' });
+            res.status(400).json({ message: 'Внутрішня помилка сервера' });
         }
     }
     async creatnotice(req, res) {
